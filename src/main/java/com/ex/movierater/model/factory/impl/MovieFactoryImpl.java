@@ -21,7 +21,7 @@ public class MovieFactoryImpl implements MovieFactory {
         movie.setTotalRating(movieDto.getRating() != null ? movieDto.getRating() : 0.0);
         movie.setVotes(1L);
         movie.setCreationDate(LocalDateTime.now());
-        movie.setReviews(Collections.emptyList());
+        movie.setReviews(Collections.emptySet());
 
         return movie;
     }

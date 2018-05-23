@@ -6,9 +6,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.hateoas.ResourceSupport;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Document
@@ -27,13 +25,13 @@ public class Movie extends ResourceSupport {
 
     private LocalDateTime creationDate;
 
-    private List<Review> reviews;
+    private Set<Review> reviews;
 
     public Movie() {
     }
 
     @JsonCreator
-    public Movie(String title, double totalRating, long votes, String director, Set<String> actors, LocalDateTime creationDate, List<Review> reviews) {
+    public Movie(String title, double totalRating, long votes, String director, Set<String> actors, LocalDateTime creationDate, Set<Review> reviews) {
         this.title = title;
         this.totalRating = totalRating;
         this.votes = votes;
@@ -79,11 +77,11 @@ public class Movie extends ResourceSupport {
         this.creationDate = creationDate;
     }
 
-    public List<Review> getReviews() {
-        return new ArrayList<>(reviews);
+    public Set<Review> getReviews() {
+        return new HashSet<>(reviews);
     }
 
-    public void setReviews(List<Review> reviews) {
+    public void setReviews(Set<Review> reviews) {
         this.reviews = reviews;
     }
 

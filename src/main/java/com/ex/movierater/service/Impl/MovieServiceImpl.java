@@ -11,7 +11,7 @@ import com.ex.movierater.model.MovieDto;
 import com.ex.movierater.model.factory.MovieFactory;
 import com.ex.movierater.repository.MovieRepository;
 import com.ex.movierater.service.MovieService;
-import org.apache.commons.lang3.StringUtils;
+import com.ex.movierater.util.MovieUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -39,12 +39,16 @@ public class MovieServiceImpl implements MovieService {
     @Override
     public Info persist(MovieDto movieDto) {
         String title = movieDto.getTitle();
+        Double rating = movieDto.getRating();
         try {
             validateTitle(title);
+            validateRating(rating);
         } catch (InvalidLenghtException e) {
             return Info.unsuccesfulInfo("Title should be 3 to 50 characters long", InfoCode.INVALID_TITLE_LENGHT, e);
         } catch (InvalidCharacterException e) {
             return Info.unsuccesfulInfo("Title can only contain alpha characters", InfoCode.INVALID_CHARACTER, e);
+        } catch (InvalidRatingException e) {
+            return Info.unsuccesfulInfo("Rating cannot be null, greater than five or below zero", InfoCode.INVALID_RATING, e);
         }
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (movieByTitle.isPresent()) {
@@ -87,17 +91,12 @@ public class MovieServiceImpl implements MovieService {
         return Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, title);
     }
 
+    private void validateRating(double rating) throws InvalidRatingException {
+        MovieUtil.validateRating(rating);
+    }
+
     private void validateTitle(String title) throws InvalidLenghtException, InvalidCharacterException {
-        if (title == null) {
-            throw new InvalidLenghtException();
-        }
-        int length = title.length();
-        if (length < 3 || length > 50) {
-            throw new InvalidLenghtException();
-        }
-        if (!StringUtils.isAlpha(title)) {
-            throw new InvalidCharacterException();
-        }
+        MovieUtil.validateTitle(title);
     }
 
     private Info update(MovieDto movieDto, Movie movie) {
@@ -108,12 +107,7 @@ public class MovieServiceImpl implements MovieService {
             actorsNew.addAll(actors);
             movie.setActors(actorsNew);
         }
-
-        try {
-            calculateNewTotalScore(movieDto, movie);
-        } catch (InvalidRatingException e) {
-            return Info.unsuccesfulInfo("Rating cannot be greater than five or below zero", InfoCode.INVALID_RATING, e);
-        }
+        calculateNewTotalScore(movieDto, movie);
 
         Movie savedMovie = movieRepository.save(movie);
         linkProvider.generateLinkForMovie(movie);
@@ -121,28 +115,7 @@ public class MovieServiceImpl implements MovieService {
 
     }
 
-    private void calculateNewTotalScore(MovieDto movieDto, Movie movie) throws InvalidRatingException {
-        Double rating = movieDto.getRating();
-        if (rating == null) {
-            rating = 0.0;
-        }
-        if (movieRatingGreaterThanFive(rating) || movieRatingLessThanZero(rating)) {
-            throw new InvalidRatingException();
-        }
-        Double totalRating = movie.getTotalRating();
-        long votes = movie.getVotes();
-        totalRating = (totalRating * votes + rating) / ++votes;
-
-        movie.setVotes(votes);
-        movie.setTotalRating(totalRating);
-
-    }
-
-    private boolean movieRatingGreaterThanFive(Double rating) {
-        return rating.compareTo(5.0) >= 1;
-    }
-
-    private boolean movieRatingLessThanZero(Double rating) {
-        return rating.compareTo(0.0) < 0;
+    private void calculateNewTotalScore(MovieDto movieDto, Movie movie) {
+        MovieUtil.calculateNewTotalRating(movieDto, movie);
     }
 }
