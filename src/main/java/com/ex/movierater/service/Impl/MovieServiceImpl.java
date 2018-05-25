@@ -12,6 +12,7 @@ import com.ex.movierater.model.factory.MovieFactory;
 import com.ex.movierater.repository.MovieRepository;
 import com.ex.movierater.service.MovieService;
 import com.ex.movierater.util.MovieUtil;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,8 @@ public class MovieServiceImpl implements MovieService {
 
     private LinkProvider linkProvider;
 
+    protected final Logger log = org.slf4j.LoggerFactory.getLogger(getClass());
+
     @Autowired
     public MovieServiceImpl(MovieRepository movieRepository, MovieFactory movieFactory, LinkProvider linkProvider) {
         this.movieRepository = movieRepository;
@@ -44,19 +47,24 @@ public class MovieServiceImpl implements MovieService {
             validateTitle(title);
             validateRating(rating);
         } catch (InvalidLenghtException e) {
+            log.error("Invalid title lenght", e);
             return Info.unsuccesfulInfo("Title should be 3 to 50 characters long", InfoCode.INVALID_TITLE_LENGHT, e);
         } catch (InvalidCharacterException e) {
+            log.error("Nonalpha character", e);
             return Info.unsuccesfulInfo("Title can only contain alpha characters", InfoCode.INVALID_CHARACTER, e);
         } catch (InvalidRatingException e) {
+            log.error("Incorect rating", e);
             return Info.unsuccesfulInfo("Rating cannot be null, greater than five or below zero", InfoCode.INVALID_RATING, e);
         }
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (movieByTitle.isPresent()) {
+            log.info("Updating movie ", movieByTitle.get());
             return update(movieDto, movieByTitle.get());
         }
         Movie movie = movieFactory.fromDto(movieDto);
         Movie savedMovie = movieRepository.save(movie);
         linkProvider.generateLinkForMovie(savedMovie);
+        log.info("Added movie ", savedMovie);
         return Info.succesfulyCreatedInfo("Movie added to database", InfoCode.MOVIE_ADDED, savedMovie);
     }
 
@@ -65,9 +73,11 @@ public class MovieServiceImpl implements MovieService {
         Sort sort = new Sort(Sort.Direction.DESC, "totalRating");
         List<Movie> allMovies = movieRepository.findAll(sort);
         if (allMovies.isEmpty()) {
+            log.info("Movies not found");
             return Info.notFound("No movies found", InfoCode.MOVIES_NOT_FOUND, null);
         }
         allMovies.forEach(movie -> linkProvider.generateLinkForMovie(movie));
+        log.info("Returning all movies sorted by rating");
         return Info.succesfulInfo("All movies sorted by rating", InfoCode.OK, allMovies);
     }
 
@@ -76,6 +86,7 @@ public class MovieServiceImpl implements MovieService {
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (movieByTitle.isPresent()) {
             movieRepository.delete(movieByTitle.get());
+            log.info("Movie succesfully removed", movieByTitle.get());
             return Info.succesfulInfo("Movie sucesfuly removed from the database", InfoCode.MOVIE_REMOVED, title);
         }
         return Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, title);
@@ -86,8 +97,10 @@ public class MovieServiceImpl implements MovieService {
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (movieByTitle.isPresent()) {
             linkProvider.generateLinkForMovie(movieByTitle.get());
+            log.info("Movie found", title);
             return Info.succesfulInfo("Movie found", InfoCode.OK, movieByTitle);
         }
+        log.info("Movie not found", title);
         return Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, title);
     }
 
@@ -107,6 +120,7 @@ public class MovieServiceImpl implements MovieService {
             actorsNew.addAll(actors);
             movie.setActors(actorsNew);
         }
+        log.info("Calculating new total score");
         calculateNewTotalScore(movieDto, movie);
 
         Movie savedMovie = movieRepository.save(movie);

@@ -91,6 +91,11 @@ public class Info {
         return builder.setDescription(description).setInfoCode(infoCode).setHttpStatusCode(404L).setObject(object).build();
     }
 
+    public static Info empty() {
+        Info.InfoBuilder builder = new Info.InfoBuilder();
+        return builder.setInfoCode(InfoCode.EMPTY).build();
+    }
+
     public static class InfoBuilder {
         private Info info;
 

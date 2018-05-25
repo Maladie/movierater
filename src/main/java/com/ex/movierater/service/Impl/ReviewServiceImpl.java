@@ -43,12 +43,9 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Info getReviews(String title) {
-        try {
-            validateTitle(title);
-        } catch (InvalidLenghtException e) {
-            return Info.unsuccesfulInfo("Title should be 3 to 50 characters long", InfoCode.INVALID_TITLE_LENGHT, e);
-        } catch (InvalidCharacterException e) {
-            return Info.unsuccesfulInfo("Title can only contain alpha characters", InfoCode.INVALID_CHARACTER, e);
+        Info titleInfo = validateTitleInfo(title);
+        if (!titleInfo.getInfoCode().equals(InfoCode.EMPTY)) {
+            return titleInfo;
         }
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (movieByTitle.isPresent()) {
@@ -63,12 +60,9 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Info getReview(String title, String author) {
-        try {
-            validateTitle(title);
-        } catch (InvalidLenghtException e) {
-            return Info.unsuccesfulInfo("Title should be 3 to 50 characters long", InfoCode.INVALID_TITLE_LENGHT, e);
-        } catch (InvalidCharacterException e) {
-            return Info.unsuccesfulInfo("Title can only contain alpha characters", InfoCode.INVALID_CHARACTER, e);
+        Info titleInfo = validateTitleInfo(title);
+        if (!titleInfo.getInfoCode().equals(InfoCode.EMPTY)) {
+            return titleInfo;
         }
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (movieByTitle.isPresent()) {
@@ -76,7 +70,7 @@ public class ReviewServiceImpl implements ReviewService {
             Optional<Review> reviewByAuthor = reviews.stream().filter(review -> review.getAuthor().equals(author)).findFirst();
             if (reviewByAuthor.isPresent()) {
                 linkProvider.generateLinkForReviews(reviewByAuthor.get(), title);
-                return Info.succesfulInfo(String.format("Review for movie: %s by $s", title, author), InfoCode.OK, reviewByAuthor.get());
+                return Info.succesfulInfo(String.format("Review for movie: %s by %s", title, author), InfoCode.OK, reviewByAuthor.get());
             }
         }
         return Info.notFound(String.format("Could not find any reviews for movie: %s by %s", title, author), InfoCode.REVIEWS_NOT_FOUND, title);
@@ -84,15 +78,11 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Info addReview(ReviewDto reviewDto) {
-        setFieldsToFalse(reviewDto);
         final String title = reviewDto.getTitle();
         final String author = reviewDto.getAuthor();
-        try {
-            validateTitle(title);
-        } catch (InvalidLenghtException e) {
-            return Info.unsuccesfulInfo("Title should be 3 to 50 characters long", InfoCode.INVALID_TITLE_LENGHT, e);
-        } catch (InvalidCharacterException e) {
-            return Info.unsuccesfulInfo("Title can only contain alpha characters", InfoCode.INVALID_CHARACTER, e);
+        Info titleInfo = validateTitleInfo(title);
+        if (!titleInfo.getInfoCode().equals(InfoCode.EMPTY)) {
+            return titleInfo;
         }
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (!movieByTitle.isPresent()) {
@@ -105,18 +95,29 @@ public class ReviewServiceImpl implements ReviewService {
             final Info.InfoBuilder builder = new Info.InfoBuilder();
             return builder.setDescription("Review for this movie already added").setHttpStatusCode(406L).setInfoCode(InfoCode.REVIEW_ALREADY_EXISTS).build();
         }
-        return addToDatabase(movie, reviewDto);
+        return sendToVerification(movie, reviewDto);
     }
 
-    private Info addToDatabase(Movie movie, ReviewDto reviewDto) {
+    private Info validateTitleInfo(String title) {
+        try {
+            validateTitle(title);
+        } catch (InvalidLenghtException e) {
+            log.error("Invalid title lenght", e);
+            return Info.unsuccesfulInfo("Title should be 3 to 50 characters long", InfoCode.INVALID_TITLE_LENGHT, e);
+        } catch (InvalidCharacterException e) {
+            log.error("Nonalpha character", e);
+            return Info.unsuccesfulInfo("Title can only contain alpha characters", InfoCode.INVALID_CHARACTER, e);
+        }
+        return Info.empty();
+    }
+
+    private Info sendToVerification(Movie movie, ReviewDto reviewDto) {
         reviewPublisher.publish(reviewDto);
-        final Review review = reviewFactory.fromDto(reviewDto);
-        movie.addNewReview(review);
-        movieRepository.save(movie);
+        log.info("Review sent to verification " + reviewDto);
         linkProvider.generateLinkForMovie(movie);
         final Info.InfoBuilder builder = new Info.InfoBuilder();
 
-        return builder.setDescription("Review added. It will be visible after verifivation.").setHttpStatusCode(202L).setInfoCode(InfoCode.REVIEW_ADDED).setObject(movie).build();
+        return builder.setDescription("Review added. It will be visible after verification. Combine GET method with provided link to Movie Resource to check if it has been accepted.").setHttpStatusCode(202L).setInfoCode(InfoCode.REVIEW_ADDED).setObject(movie).build();
     }
 
 
@@ -133,10 +134,5 @@ public class ReviewServiceImpl implements ReviewService {
 
     private void validateTitle(String title) throws InvalidCharacterException, InvalidLenghtException {
         MovieUtil.validateTitle(title);
-    }
-
-    private void setFieldsToFalse(ReviewDto reviewDto) {
-        reviewDto.setAccepted(false);
-        reviewDto.setVerified(false);
     }
 }

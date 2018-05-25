@@ -18,9 +18,7 @@ public class LinkProviderImpl implements LinkProvider {
     }
 
     public void generateLinkForReviews(Review review, String title) {
-        if (review.isAccepted()) {
             Link link = ControllerLinkBuilder.linkTo(Movies.class).slash("movies").slash(title).slash("reviews").slash(review.getAuthor()).withSelfRel();
             review.getLinks().add(link);
-        }
     }
 }

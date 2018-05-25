@@ -154,7 +154,7 @@ public class ReviewServiceImplTest {
         final Review review = new Review();
         review.setAuthor("Hulk");
         final Set<Review> reviews = Set.of(review);
-        final Info expected = Info.succesfulInfo(String.format("Review for movie: %s by $s", title, "Hulk"), InfoCode.OK, review);
+        final Info expected = Info.succesfulInfo(String.format("Review for movie: %s by %s", title, "Hulk"), InfoCode.OK, review);
 
         testGetReview(title, Optional.of(movie), reviews, expected);
     }
@@ -187,7 +187,8 @@ public class ReviewServiceImplTest {
         final Info actual = reviewService.getReview(title, author);
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object"));
     }
+
 
 }
