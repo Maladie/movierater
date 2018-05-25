@@ -10,6 +10,8 @@ public class ReviewDto {
 
     private boolean accepted;
 
+    private boolean verified;
+
     public String getAuthor() {
         return author;
     }
@@ -40,5 +42,24 @@ public class ReviewDto {
 
     public void setAccepted(boolean accepted) {
         this.accepted = accepted;
+    }
+
+    public boolean isVerified() {
+        return verified;
+    }
+
+    public void setVerified(boolean verified) {
+        this.verified = verified;
+    }
+
+    @Override
+    public String toString() {
+        return "ReviewDto{" +
+                "author='" + author + '\'' +
+                ", title='" + title + '\'' +
+                ", content='" + content + '\'' +
+                ", accepted=" + accepted +
+                ", verified=" + verified +
+                '}';
     }
 }

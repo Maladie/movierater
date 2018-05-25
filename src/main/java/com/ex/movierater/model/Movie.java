@@ -81,6 +81,19 @@ public class Movie extends ResourceSupport {
         return new HashSet<>(reviews);
     }
 
+    public void addNewReview(Review review) {
+        reviews.add(review);
+    }
+
+    public void deleteReview(Review review) {
+        reviews.remove(review);
+    }
+
+    public void updateReview(Review review) {
+        deleteReview(review);
+        addNewReview(review);
+    }
+
     public void setReviews(Set<Review> reviews) {
         this.reviews = reviews;
     }

@@ -10,4 +10,6 @@ public interface ReviewService {
     Info getReview(String title, String author);
 
     Info addReview(ReviewDto reviewDto);
+
+    void updateReview(ReviewDto reviewDto);
 }

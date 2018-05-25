@@ -1,12 +1,11 @@
 package com.ex.movierater.controller;
 
 import com.ex.movierater.info.Info;
+import com.ex.movierater.model.ReviewDto;
 import com.ex.movierater.service.ReviewService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class Reviews {
@@ -33,5 +32,14 @@ public class Reviews {
             return new ResponseEntity<>(info, HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(info, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/movies/reviews/", produces = "application/json", consumes = "application/json")
+    public ResponseEntity<Info> addReview(@RequestBody ReviewDto reviewDto) {
+        Info info = reviewService.addReview(reviewDto);
+        if (info.getHttpStatusCode() == 400 || info.getHttpStatusCode() == 406) {
+            return new ResponseEntity<>(info, HttpStatus.BAD_REQUEST);
+        }
+        return new ResponseEntity<>(info, HttpStatus.ACCEPTED);
     }
 }
