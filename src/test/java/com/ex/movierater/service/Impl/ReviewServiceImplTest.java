@@ -18,6 +18,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -67,7 +68,10 @@ public class ReviewServiceImplTest {
     public void getReviewsShouldReturnSuccesfulInfoWhenReviewsFound() {
         String title = "Movie";
         Movie movie = Mockito.mock(Movie.class);
-        final Set<Review> reviews = Set.of(new Review());
+        final Set<Review> reviews = new HashSet<>();
+        final Review review = new Review();
+        review.setAuthor("Author");
+        reviews.add(review);
         final Info expected = Info.succesfulInfo(String.format("Reviews for movie: %s", title), InfoCode.OK, reviews);
 
         testGetReviews(title, Optional.of(movie), reviews, expected);
@@ -77,7 +81,10 @@ public class ReviewServiceImplTest {
     public void getReviewsShouldReturnUnsuccesfulInfoWhenMovieNotFound() {
         String title = "Movie";
         final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s", title), InfoCode.REVIEWS_NOT_FOUND, title);
-        final Set<Review> reviews = Set.of(new Review());
+        final Review review = new Review();
+        review.setAuthor("Author");
+        final Set<Review> reviews = new HashSet<>();
+        reviews.add(review);
 
         testGetReviews(title, Optional.empty(), reviews, expected);
     }
@@ -153,7 +160,8 @@ public class ReviewServiceImplTest {
         Movie movie = Mockito.mock(Movie.class);
         final Review review = new Review();
         review.setAuthor("Hulk");
-        final Set<Review> reviews = Set.of(review);
+        final Set<Review> reviews = new HashSet<>();
+        reviews.add(review);
         final Info expected = Info.succesfulInfo(String.format("Review for movie: %s by %s", title, "Hulk"), InfoCode.OK, review);
 
         testGetReview(title, Optional.of(movie), reviews, expected);
@@ -163,7 +171,10 @@ public class ReviewServiceImplTest {
     public void getReviewShouldReturnUnsuccesfulInfoWhenMovieNotFound() {
         String title = "Movie";
         final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s by %s", title, "Hulk"), InfoCode.REVIEWS_NOT_FOUND, title);
-        final Set<Review> reviews = Set.of(new Review());
+        final Review review = new Review();
+        review.setAuthor("Author");
+        final Set<Review> reviews = new HashSet<>();
+        reviews.add(review);
 
         testGetReview(title, Optional.empty(), reviews, expected);
     }

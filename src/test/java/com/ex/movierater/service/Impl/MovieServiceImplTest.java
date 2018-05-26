@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.mockito.*;
 import org.springframework.data.domain.Sort;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -134,7 +135,8 @@ public class MovieServiceImplTest {
     public void allMoviesByRatingShouldReturnSuccesfulInfoWhenMoviesFound() throws Exception {
         //given
         Movie movie = Mockito.mock(Movie.class);
-        final List<Movie> allMovies = List.of(movie);
+        final List<Movie> allMovies = new ArrayList<>();
+        allMovies.add(movie);
         Info expected = Info.succesfulInfo("All movies sorted by rating", InfoCode.OK, allMovies);
 
         allMoviesByRatingTest(allMovies, expected);
