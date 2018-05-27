@@ -77,8 +77,11 @@ public class ReviewServiceImpl implements ReviewService {
             Set<Review> reviews = movieByTitle.get().getReviews();
             Optional<Review> reviewByAuthor = reviews.stream().filter(review -> review.getAuthor().equals(author)).findFirst();
             if (reviewByAuthor.isPresent()) {
-                linkProvider.generateLinkForReviews(reviewByAuthor.get(), title);
-                return Info.succesfulInfo(String.format("Review for movie: %s by %s", title, author), InfoCode.OK, reviewByAuthor.get(), null);
+                final Review review = reviewByAuthor.get();
+                linkProvider.generateLinkForReviews(review, title);
+                review.add(linkProvider.getMovieLinkByTitle(title));
+                review.add(linkProvider.generateLinkForReviews(title));
+                return Info.succesfulInfo(String.format("Review for movie: %s by %s. Combine GET method with movie link to go back to movie or with reviews to see other reviews", title, author), InfoCode.OK, reviewByAuthor.get(), null);
             } else {
                 Info.notFound(String.format("Could not find any reviews for movie: %s. Be first to add one. Combine POST method with provided link and Content-Type: application/json header. Request body example in object field.", title),
                         InfoCode.REVIEWS_NOT_FOUND, jsonExamples.getRequestBodyExample("reviewexample.json"), new LinkTO(linkProvider.generateLinkForReviews(title)));

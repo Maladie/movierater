@@ -159,19 +159,6 @@ public class ReviewServiceImplTest {
     }
 
     @Test
-    public void getReviewShouldReturnSuccesfulInfoWhenReviewFound() {
-        String title = "Movie";
-        Movie movie = Mockito.mock(Movie.class);
-        final Review review = new Review();
-        review.setAuthor("Hulk");
-        final Set<Review> reviews = new HashSet<>();
-        reviews.add(review);
-        final Info expected = Info.succesfulInfo(String.format("Review for movie: %s by %s", title, "Hulk"), InfoCode.OK, review, null);
-
-        testGetReview(title, Optional.of(movie), reviews, expected);
-    }
-
-    @Test
     public void getReviewShouldReturnUnsuccesfulInfoWhenMovieNotFound() {
         String title = "Movie";
         final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s by %s. Combine provided link with GET method to go back to movies", title, "Hulk"), InfoCode.REVIEWS_NOT_FOUND, title, null);

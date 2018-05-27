@@ -14,6 +14,10 @@ public class LinkProviderImpl implements LinkProvider {
 
     private static final Link moviesLink = ControllerLinkBuilder.linkTo(Movies.class).slash("movies").withRel("movies");
 
+    public Link getMovieLinkByTitle(String title) {
+        return ControllerLinkBuilder.linkTo(Movies.class).slash("movies").slash(title).withRel("movie");
+    }
+
     public void generateLinkForMovie(Movie movie) {
         movie.getReviews().forEach(review -> generateLinkForReviews(review, movie.getTitle()));
         Link link = ControllerLinkBuilder.linkTo(Movies.class).slash("movies").slash(movie.getTitle()).withSelfRel();

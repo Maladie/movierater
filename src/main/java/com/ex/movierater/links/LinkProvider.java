@@ -13,4 +13,6 @@ public interface LinkProvider {
     LinkTO getLinkToMovies();
 
     Link generateLinkForReviews(String title);
+
+    Link getMovieLinkByTitle(String title);
 }
