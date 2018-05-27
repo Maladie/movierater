@@ -1,11 +1,13 @@
 package com.ex.movierater.service.Impl;
 
+import com.ex.movierater.examples.JsonExamples;
 import com.ex.movierater.exception.InvalidCharacterException;
 import com.ex.movierater.exception.InvalidLenghtException;
 import com.ex.movierater.info.Info;
 import com.ex.movierater.info.InfoCode;
 import com.ex.movierater.links.LinkProvider;
 import com.ex.movierater.messaging.ReviewPublisher;
+import com.ex.movierater.model.LinkTO;
 import com.ex.movierater.model.Movie;
 import com.ex.movierater.model.Review;
 import com.ex.movierater.model.ReviewDto;
@@ -31,14 +33,17 @@ public class ReviewServiceImpl implements ReviewService {
 
     private ReviewPublisher reviewPublisher;
 
+    private JsonExamples jsonExamples;
+
     protected final Logger log = org.slf4j.LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public ReviewServiceImpl(MovieRepository movieRepository, LinkProvider linkProvider, ReviewFactory reviewFactory, ReviewPublisher reviewPublisher) {
+    public ReviewServiceImpl(MovieRepository movieRepository, LinkProvider linkProvider, ReviewFactory reviewFactory, ReviewPublisher reviewPublisher, JsonExamples jsonExamples) {
         this.movieRepository = movieRepository;
         this.linkProvider = linkProvider;
         this.reviewFactory = reviewFactory;
         this.reviewPublisher = reviewPublisher;
+        this.jsonExamples = jsonExamples;
     }
 
     @Override
@@ -52,10 +57,13 @@ public class ReviewServiceImpl implements ReviewService {
             Set<Review> reviews = movieByTitle.get().getReviews();
             if (!reviews.isEmpty()) {
                 reviews.forEach(review -> linkProvider.generateLinkForReviews(review, title));
-                return Info.succesfulInfo(String.format("Reviews for movie: %s", title), InfoCode.OK, reviews);
+                return Info.succesfulInfo(String.format("Reviews for movie: %s.", title), InfoCode.OK, reviews, null);
+            } else {
+                return Info.notFound(String.format("Could not find any reviews for movie: %s. Be first to add one. Combine POST method with provided link and Content-Type: application/json header. Request body example in object field.", title),
+                        InfoCode.REVIEWS_NOT_FOUND, jsonExamples.getRequestBodyExample("reviewexample.json"), new LinkTO(linkProvider.generateLinkForReviews(title)));
             }
         }
-        return Info.notFound(String.format("Could not find any reviews for movie: %s", title), InfoCode.REVIEWS_NOT_FOUND, title);
+        return Info.notFound(String.format("Could not find movie: %s. Combine provided link with GET method to go back to movies", title), InfoCode.MOVIES_NOT_FOUND, null, linkProvider.getLinkToMovies());
     }
 
     @Override
@@ -70,10 +78,13 @@ public class ReviewServiceImpl implements ReviewService {
             Optional<Review> reviewByAuthor = reviews.stream().filter(review -> review.getAuthor().equals(author)).findFirst();
             if (reviewByAuthor.isPresent()) {
                 linkProvider.generateLinkForReviews(reviewByAuthor.get(), title);
-                return Info.succesfulInfo(String.format("Review for movie: %s by %s", title, author), InfoCode.OK, reviewByAuthor.get());
+                return Info.succesfulInfo(String.format("Review for movie: %s by %s", title, author), InfoCode.OK, reviewByAuthor.get(), null);
+            } else {
+                Info.notFound(String.format("Could not find any reviews for movie: %s. Be first to add one. Combine POST method with provided link and Content-Type: application/json header. Request body example in object field.", title),
+                        InfoCode.REVIEWS_NOT_FOUND, jsonExamples.getRequestBodyExample("reviewexample.json"), new LinkTO(linkProvider.generateLinkForReviews(title)));
             }
         }
-        return Info.notFound(String.format("Could not find any reviews for movie: %s by %s", title, author), InfoCode.REVIEWS_NOT_FOUND, title);
+        return Info.notFound(String.format("Could not find any reviews for movie: %s by %s. Combine provided link with GET method to go back to movies", title, author), InfoCode.REVIEWS_NOT_FOUND, null, linkProvider.getLinkToMovies());
     }
 
     @Override
@@ -86,14 +97,14 @@ public class ReviewServiceImpl implements ReviewService {
         }
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (!movieByTitle.isPresent()) {
-            return Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, title);
+            return Info.notFound("Movie not found. Combine given link with GET method to see full list of movies", InfoCode.MOVIES_NOT_FOUND, null, linkProvider.getLinkToMovies());
         }
         final Movie movie = movieByTitle.get();
         Set<Review> reviews = movieByTitle.get().getReviews();
         Optional<Review> reviewByAuthor = reviews.stream().filter(review -> review.getAuthor().equals(author)).findFirst();
         if (reviewByAuthor.isPresent()) {
             final Info.InfoBuilder builder = new Info.InfoBuilder();
-            return builder.setDescription("Review for this movie already added").setHttpStatusCode(406L).setInfoCode(InfoCode.REVIEW_ALREADY_EXISTS).build();
+            return builder.setDescription("Review for this movie already added.").setHttpStatusCode(406L).setInfoCode(InfoCode.REVIEW_ALREADY_EXISTS).setObject(movie).build();
         }
         return sendToVerification(movie, reviewDto);
     }
@@ -117,7 +128,8 @@ public class ReviewServiceImpl implements ReviewService {
         linkProvider.generateLinkForMovie(movie);
         final Info.InfoBuilder builder = new Info.InfoBuilder();
 
-        return builder.setDescription("Review added. It will be visible after verification. Combine GET method with provided link to Movie Resource to check if it has been accepted.").setHttpStatusCode(202L).setInfoCode(InfoCode.REVIEW_ADDED).setObject(movie).build();
+        return builder.setDescription("Review added. It will be visible after verification. Combine GET method with provided link to Movie Resource to check if it has been accepted.")
+                .setHttpStatusCode(202L).setInfoCode(InfoCode.REVIEW_ADDED).setObject(movie).build();
     }
 
 

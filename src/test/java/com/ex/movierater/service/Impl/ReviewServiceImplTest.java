@@ -1,5 +1,6 @@
 package com.ex.movierater.service.Impl;
 
+import com.ex.movierater.examples.JsonExamples;
 import com.ex.movierater.exception.InvalidCharacterException;
 import com.ex.movierater.exception.InvalidLenghtException;
 import com.ex.movierater.info.Info;
@@ -29,6 +30,9 @@ public class ReviewServiceImplTest {
 
     @Mock
     private LinkProvider linkProvider;
+
+    @Mock
+    private JsonExamples jsonExamples;
 
     @InjectMocks
     private ReviewServiceImpl reviewService;
@@ -72,7 +76,7 @@ public class ReviewServiceImplTest {
         final Review review = new Review();
         review.setAuthor("Author");
         reviews.add(review);
-        final Info expected = Info.succesfulInfo(String.format("Reviews for movie: %s", title), InfoCode.OK, reviews);
+        final Info expected = Info.succesfulInfo(String.format("Reviews for movie: %s.", title), InfoCode.OK, reviews, null);
 
         testGetReviews(title, Optional.of(movie), reviews, expected);
     }
@@ -80,7 +84,7 @@ public class ReviewServiceImplTest {
     @Test
     public void getReviewsShouldReturnUnsuccesfulInfoWhenMovieNotFound() {
         String title = "Movie";
-        final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s", title), InfoCode.REVIEWS_NOT_FOUND, title);
+        final Info expected = Info.notFound(String.format("Could not find movie: %s. Combine provided link with GET method to go back to movies", title), InfoCode.MOVIES_NOT_FOUND, title, null);
         final Review review = new Review();
         review.setAuthor("Author");
         final Set<Review> reviews = new HashSet<>();
@@ -93,7 +97,7 @@ public class ReviewServiceImplTest {
     public void getReviewsShouldReturnUnsuccesfulInfoWhenMovieWithoutReviewsFound() {
         String title = "Movie";
         Movie movie = Mockito.mock(Movie.class);
-        final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s", title), InfoCode.REVIEWS_NOT_FOUND, title);
+        final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s. Be first to add one. Combine POST method with provided link and Content-Type: application/json header. Request body example in object field.", title), InfoCode.REVIEWS_NOT_FOUND, title, null);
         final Set<Review> reviews = Collections.emptySet();
 
         testGetReviews(title, Optional.of(movie), reviews, expected);
@@ -107,7 +111,7 @@ public class ReviewServiceImplTest {
         final Info actual = reviewService.getReviews(title);
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object", "link"));
     }
 
 
@@ -116,7 +120,7 @@ public class ReviewServiceImplTest {
         final Info actual = reviewService.getReviews(title);
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object", "link"));
     }
 
     @Test
@@ -151,7 +155,7 @@ public class ReviewServiceImplTest {
         final Info actual = reviewService.getReview(title, author);
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object", "link"));
     }
 
     @Test
@@ -162,7 +166,7 @@ public class ReviewServiceImplTest {
         review.setAuthor("Hulk");
         final Set<Review> reviews = new HashSet<>();
         reviews.add(review);
-        final Info expected = Info.succesfulInfo(String.format("Review for movie: %s by %s", title, "Hulk"), InfoCode.OK, review);
+        final Info expected = Info.succesfulInfo(String.format("Review for movie: %s by %s", title, "Hulk"), InfoCode.OK, review, null);
 
         testGetReview(title, Optional.of(movie), reviews, expected);
     }
@@ -170,7 +174,7 @@ public class ReviewServiceImplTest {
     @Test
     public void getReviewShouldReturnUnsuccesfulInfoWhenMovieNotFound() {
         String title = "Movie";
-        final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s by %s", title, "Hulk"), InfoCode.REVIEWS_NOT_FOUND, title);
+        final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s by %s. Combine provided link with GET method to go back to movies", title, "Hulk"), InfoCode.REVIEWS_NOT_FOUND, title, null);
         final Review review = new Review();
         review.setAuthor("Author");
         final Set<Review> reviews = new HashSet<>();
@@ -183,7 +187,7 @@ public class ReviewServiceImplTest {
     public void getReviewShouldReturnUnsuccesfulInfoWhenMovieWithoutReviewsFound() {
         String title = "Movie";
         Movie movie = Mockito.mock(Movie.class);
-        final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s by %s", title, "Hulk"), InfoCode.REVIEWS_NOT_FOUND, title);
+        final Info expected = Info.notFound(String.format("Could not find any reviews for movie: %s by %s. Combine provided link with GET method to go back to movies", title, "Hulk"), InfoCode.REVIEWS_NOT_FOUND, title, null);
         final Set<Review> reviews = Collections.emptySet();
 
         testGetReview(title, Optional.of(movie), reviews, expected);
@@ -198,7 +202,7 @@ public class ReviewServiceImplTest {
         final Info actual = reviewService.getReview(title, author);
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object", "link"));
     }
 
 

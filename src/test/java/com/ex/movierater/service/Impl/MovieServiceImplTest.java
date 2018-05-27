@@ -1,5 +1,6 @@
 package com.ex.movierater.service.Impl;
 
+import com.ex.movierater.examples.JsonExamples;
 import com.ex.movierater.exception.InvalidLenghtException;
 import com.ex.movierater.exception.InvalidRatingException;
 import com.ex.movierater.info.Info;
@@ -32,6 +33,9 @@ public class MovieServiceImplTest {
     @Mock
     private LinkProvider linkProvider;
 
+    @Mock
+    private JsonExamples jsonExamples;
+
     @InjectMocks
     private MovieServiceImpl movieService;
 
@@ -45,7 +49,7 @@ public class MovieServiceImplTest {
         //given
         Movie savedMovie = Mockito.mock(Movie.class);
         savedMovie.setTitle("Movie");
-        Info expected = Info.succesfulyCreatedInfo("Movie added to database", InfoCode.MOVIE_ADDED, savedMovie);
+        Info expected = Info.succesfulyCreatedInfo("Movie added to database. Combine provided self link with Http GET method to get movie, DELETE method to remove", InfoCode.MOVIE_ADDED, savedMovie);
 
         shouldReturnSuccesfulInfo(Optional.empty(), expected, savedMovie);
 
@@ -55,7 +59,7 @@ public class MovieServiceImplTest {
     public void shouldReturnSuccesfulPatchedInfoWhenMovieIsAlreadyInDataBase() throws Exception {
         Movie savedMovie = Mockito.mock(Movie.class);
         savedMovie.setTitle("Movie");
-        final Info expected = Info.succesfulyPatchedInfo("Movie rating and cast updated", InfoCode.MOVIE_UPDATED, savedMovie);
+        final Info expected = Info.succesfulyPatchedInfo("Movie rating and cast updated. Combine movies link with GET to go back to movies. GET with review link to get Review", InfoCode.MOVIE_UPDATED, savedMovie);
 
         shouldReturnSuccesfulInfo(Optional.of(savedMovie), expected, savedMovie);
     }
@@ -73,7 +77,7 @@ public class MovieServiceImplTest {
         final Info actual = movieService.persist(movieDto);
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object"));
     }
 
     @Test
@@ -137,15 +141,16 @@ public class MovieServiceImplTest {
         Movie movie = Mockito.mock(Movie.class);
         final List<Movie> allMovies = new ArrayList<>();
         allMovies.add(movie);
-        Info expected = Info.succesfulInfo("All movies sorted by rating", InfoCode.OK, allMovies);
+        Info expected = Info.succesfulInfo("All movies sorted by rating. Combine provided self link of your choice with Http GET method to get movie, DELETE method to remove. GET with review link to get Review.", InfoCode.OK, allMovies, null);
 
         allMoviesByRatingTest(allMovies, expected);
     }
 
     @Test
     public void allMoviesByRatingShouldReturnUnsuccesfulInfoWhenMoviesNotFound() throws Exception {
+
         //given
-        Info expected = Info.notFound("No movies found", InfoCode.MOVIES_NOT_FOUND, null);
+        Info expected = Info.notFound("No movies found. Be first to add a movie. Combine PUT method with Content-Type: application/json Header and provided movies link. Example request body in object field.", InfoCode.MOVIES_NOT_FOUND, null, null);
 
         allMoviesByRatingTest(Collections.emptyList(), expected);
     }
@@ -158,14 +163,14 @@ public class MovieServiceImplTest {
         final Info actual = movieService.allMoviesByRating();
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object", "link"));
     }
 
     @Test
     public void deleteShouldReturnSuccesfulInfoWhenMovieIsDeleted() throws Exception {
         //given
         Movie movieToDelete = Mockito.mock(Movie.class);
-        final Info expected = Info.succesfulInfo("Movie sucesfuly removed from the database", InfoCode.MOVIE_REMOVED, null);
+        final Info expected = Info.succesfulInfo("Movie sucesfuly removed from the database. Combine provided link with GET method to go back to movies or PUT method with Content-Type: application/json Header to add or update movie. Example request body in object field.", InfoCode.MOVIE_REMOVED, null, null);
 
         deleteTest(Optional.of(movieToDelete), expected);
     }
@@ -173,7 +178,7 @@ public class MovieServiceImplTest {
     @Test
     public void deleteShouldReturnUnuccesfulInfoWhenMovieNotFound() throws Exception {
         //given
-        final Info expected = Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, null);
+        final Info expected = Info.notFound("Movie not found. Combine provided link with GET method to go back to movies or PUT method with Content-Type: application/json Header to add or update movie. Example request body in object field.", InfoCode.MOVIES_NOT_FOUND, null, null);
 
         deleteTest(Optional.empty(), expected);
     }
@@ -185,14 +190,14 @@ public class MovieServiceImplTest {
         final Info actual = movieService.delete(ArgumentMatchers.anyString());
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object", "link"));
     }
 
     @Test
     public void getShouldReturnSuccesfulInfoWhenMovieFound() throws Exception {
         //given
         Movie movie = Mockito.mock(Movie.class);
-        final Info expected = Info.succesfulInfo("Movie found", InfoCode.OK, null);
+        final Info expected = Info.succesfulInfo("Movie found. Combine provided self link with Http GET method to get movie, DELETE method to remove. Combine movies link with GET to go back to movies. GET with review link to get Review", InfoCode.OK, null, null);
 
         getTest(Optional.of(movie), expected);
     }
@@ -200,7 +205,7 @@ public class MovieServiceImplTest {
     @Test
     public void getShouldReturnUnsuccesfulInfoWhenMovieNotFound() throws Exception {
         //given
-        final Info expected = Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, null);
+        final Info expected = Info.notFound("Movie not found. Combine provided link with GET method to go back to movies or PUT method with Content-Type: application/json Header to add or update movie. Example request body in object field.", InfoCode.MOVIES_NOT_FOUND, null, null);
 
         getTest(Optional.empty(), expected);
     }
@@ -212,7 +217,7 @@ public class MovieServiceImplTest {
         final Info actual = movieService.get(ArgumentMatchers.anyString());
 
         //then
-        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object"));
+        Assert.assertTrue(EqualsBuilder.reflectionEquals(actual, expected, "key", "object", "link"));
     }
 
 }

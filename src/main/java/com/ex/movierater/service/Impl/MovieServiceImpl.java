@@ -1,5 +1,6 @@
 package com.ex.movierater.service.Impl;
 
+import com.ex.movierater.examples.JsonExamples;
 import com.ex.movierater.exception.InvalidCharacterException;
 import com.ex.movierater.exception.InvalidLenghtException;
 import com.ex.movierater.exception.InvalidRatingException;
@@ -15,6 +16,7 @@ import com.ex.movierater.util.MovieUtil;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.Link;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,13 +32,16 @@ public class MovieServiceImpl implements MovieService {
 
     private LinkProvider linkProvider;
 
+    private JsonExamples jsonExamples;
+
     protected final Logger log = org.slf4j.LoggerFactory.getLogger(getClass());
 
     @Autowired
-    public MovieServiceImpl(MovieRepository movieRepository, MovieFactory movieFactory, LinkProvider linkProvider) {
+    public MovieServiceImpl(MovieRepository movieRepository, MovieFactory movieFactory, LinkProvider linkProvider, JsonExamples jsonExamples) {
         this.movieRepository = movieRepository;
         this.movieFactory = movieFactory;
         this.linkProvider = linkProvider;
+        this.jsonExamples = jsonExamples;
     }
 
     @Override
@@ -65,7 +70,7 @@ public class MovieServiceImpl implements MovieService {
         Movie savedMovie = movieRepository.save(movie);
         linkProvider.generateLinkForMovie(savedMovie);
         log.info("Added movie ", savedMovie);
-        return Info.succesfulyCreatedInfo("Movie added to database", InfoCode.MOVIE_ADDED, savedMovie);
+        return Info.succesfulyCreatedInfo("Movie added to database. Combine provided self link with Http GET method to get movie, DELETE method to remove", InfoCode.MOVIE_ADDED, savedMovie);
     }
 
     @Override
@@ -74,11 +79,13 @@ public class MovieServiceImpl implements MovieService {
         List<Movie> allMovies = movieRepository.findAll(sort);
         if (allMovies.isEmpty()) {
             log.info("Movies not found");
-            return Info.notFound("No movies found", InfoCode.MOVIES_NOT_FOUND, null);
+            return Info.notFound("No movies found. Be first to add a movie. Combine PUT method with Content-Type: application/json Header and provided movies link. Example request body in object field.",
+                    InfoCode.MOVIES_NOT_FOUND, jsonExamples.getRequestBodyExample("movieexample.json"), linkProvider.getLinkToMovies());
         }
         allMovies.forEach(movie -> linkProvider.generateLinkForMovie(movie));
         log.info("Returning all movies sorted by rating");
-        return Info.succesfulInfo("All movies sorted by rating", InfoCode.OK, allMovies);
+        return Info.succesfulInfo("All movies sorted by rating. Combine provided self link of your choice with Http GET method to get movie, DELETE method to remove. GET with review link to get Review.",
+                InfoCode.OK, allMovies, linkProvider.getLinkToMovies());
     }
 
     @Override
@@ -87,21 +94,28 @@ public class MovieServiceImpl implements MovieService {
         if (movieByTitle.isPresent()) {
             movieRepository.delete(movieByTitle.get());
             log.info("Movie succesfully removed", movieByTitle.get());
-            return Info.succesfulInfo("Movie sucesfuly removed from the database", InfoCode.MOVIE_REMOVED, title);
+            return Info.succesfulInfo("Movie sucesfuly removed from the database. Combine provided link with GET method to go back to movies or PUT method with Content-Type: application/json Header to add or update movie. Example request body in object field.",
+                    InfoCode.MOVIE_REMOVED, jsonExamples.getRequestBodyExample("movieexample.json"), linkProvider.getLinkToMovies());
         }
-        return Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, title);
+        return Info.notFound("Movie not found. Combine provided link with GET method to go back to movies or PUT method with Content-Type: application/json Header to add or update movie. Example request body in object field.",
+                InfoCode.MOVIES_NOT_FOUND, jsonExamples.getRequestBodyExample("movieexample.json"), linkProvider.getLinkToMovies());
     }
 
     @Override
     public Info get(String title) {
         Optional<Movie> movieByTitle = movieRepository.findByTitle(title);
         if (movieByTitle.isPresent()) {
-            linkProvider.generateLinkForMovie(movieByTitle.get());
+            final Movie movie = movieByTitle.get();
+            linkProvider.generateLinkForMovie(movie);
+            final Link link = linkProvider.generateLinkForReviews(title);
+            movie.add(link);
             log.info("Movie found", title);
-            return Info.succesfulInfo("Movie found", InfoCode.OK, movieByTitle);
+            return Info.succesfulInfo("Movie found. Combine provided self link with Http GET method to get movie, DELETE method to remove. Combine movies link with GET to go back to movies. GET with review link to get Review",
+                    InfoCode.OK, movie, linkProvider.getLinkToMovies());
         }
         log.info("Movie not found", title);
-        return Info.notFound("Movie not found", InfoCode.MOVIES_NOT_FOUND, title);
+        return Info.notFound("Movie not found. Combine provided link with GET method to go back to movies or PUT method with Content-Type: application/json Header to add or update movie. Example request body in object field.",
+                InfoCode.MOVIES_NOT_FOUND, jsonExamples.getRequestBodyExample("movieexample.json"), linkProvider.getLinkToMovies());
     }
 
     private void validateRating(double rating) throws InvalidRatingException {
@@ -124,8 +138,8 @@ public class MovieServiceImpl implements MovieService {
         calculateNewTotalScore(movieDto, movie);
 
         Movie savedMovie = movieRepository.save(movie);
-        linkProvider.generateLinkForMovie(movie);
-        return Info.succesfulyPatchedInfo("Movie rating and cast updated", InfoCode.MOVIE_UPDATED, savedMovie);
+        linkProvider.generateLinkForMovie(savedMovie);
+        return Info.succesfulyPatchedInfo("Movie rating and cast updated. Combine movies link with GET to go back to movies. GET with review link to get Review", InfoCode.MOVIE_UPDATED, savedMovie);
 
     }
 

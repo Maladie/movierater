@@ -1,5 +1,7 @@
 package com.ex.movierater.info;
 
+import com.ex.movierater.model.LinkTO;
+
 import java.util.UUID;
 
 public class Info {
@@ -14,12 +16,8 @@ public class Info {
 
     private Object object;
 
-    public Info() {
-        key = UUID.randomUUID().toString();
-        httpStatusCode = 200L;
-        infoCode = InfoCode.OK;
-    }
-
+    private Object link;
+    
     public String getKey() {
         return key;
     }
@@ -60,15 +58,26 @@ public class Info {
         this.object = object;
     }
 
+    public Info() {
+    }
+
+    public Object getLink() {
+        return link;
+    }
+
+    public void setLink(Object link) {
+        this.link = link;
+    }
+
     @Override
     public String toString() {
         return "Info [httpStatusCode=" + httpStatusCode + ", description=" + description + ", object=" + object + "]";
     }
 
 
-    public static Info succesfulInfo(String description, InfoCode infoCode, Object object) {
+    public static Info succesfulInfo(String description, InfoCode infoCode, Object object, Object link) {
         Info.InfoBuilder builder = new Info.InfoBuilder();
-        return builder.setDescription(description).setInfoCode(infoCode).setHttpStatusCode(200L).setObject(object).build();
+        return builder.setDescription(description).setInfoCode(infoCode).setHttpStatusCode(200L).setObject(object).withLink(link).build();
     }
 
     public static Info succesfulyCreatedInfo(String description, InfoCode infoCode, Object object) {
@@ -86,14 +95,18 @@ public class Info {
         return builder.setDescription(description).setInfoCode(infoCode).setHttpStatusCode(200L).setObject(object).build();
     }
 
-    public static Info notFound(String description, InfoCode infoCode, Object object) {
+    public static Info notFound(String description, InfoCode infoCode, Object object, Object link) {
         Info.InfoBuilder builder = new Info.InfoBuilder();
-        return builder.setDescription(description).setInfoCode(infoCode).setHttpStatusCode(404L).setObject(object).build();
+        return builder.setDescription(description).setInfoCode(infoCode).setHttpStatusCode(404L).setObject(object).withLink(link).build();
     }
 
     public static Info empty() {
         Info.InfoBuilder builder = new Info.InfoBuilder();
         return builder.setInfoCode(InfoCode.EMPTY).build();
+    }
+
+    public void setLink(LinkTO link) {
+        this.link = link;
     }
 
     public static class InfoBuilder {
@@ -126,6 +139,11 @@ public class Info {
         public Info build() {
             info.setKey(UUID.randomUUID().toString());
             return info;
+        }
+
+        public InfoBuilder withLink(Object link) {
+            info.setLink(link);
+            return this;
         }
     }
 }
